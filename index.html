@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KAZARBUILD">
+<meta name="theme-color" content="#0b3a6f">
+<meta name="description" content="Технологическое руководство по строительным процессам KAZARBUILD">
+<title>KAZARBUILD</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.5.0/webfonts/tabler-icons.min.css">
+<style>
+/* ═══════════════════════════════════════════════
+   ПЕРЕМЕННЫЕ И СБРОС
+═══════════════════════════════════════════════ */
+:root {
+  --p:      #0b3a6f;   /* primary navy  */
+  --a:      #1b98fb;   /* accent blue   */
+  --bg:     #f2f1f7;
+  --card:   #ffffff;
+  --text:   #16162a;
+  --muted:  #8a8a9e;
+  --border: rgba(11,58,111,.1);
+  --warn-bg: #fff8e1;
+  --warn-b:  #ffc107;
+  --warn-t:  #7a5800;
+  --r:      12px;
+  --rs:     8px;
+  --th:     52px;   /* topbar height  */
+  --bh:     62px;   /* bottom nav h   */
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-tap-highlight-color:transparent;
+}
+button,input{font-family:inherit}
+img{display:block;max-width:100%}
+
+/* ═══════════════════════════════════════════════
+   ЗАГРУЗКА
+═══════════════════════════════════════════════ */
+#loading{
+  position:fixed;inset:0;background:var(--p);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;z-index:999;
+}
+#loading .ll{font-size:26px;font-weight:800;color:#fff;letter-spacing:3px}
+#loading .ls{font-size:13px;color:rgba(255,255,255,.5)}
+.spin{
+  width:36px;height:36px;
+  border:3px solid rgba(255,255,255,.2);
+  border-top-color:#fff;border-radius:50%;
+  animation:sp .75s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════════ */
+#app{
+  height:100%;display:flex;flex-direction:column;
+  max-width:560px;margin:0 auto;
+  background:var(--bg);
+  box-shadow:0 0 60px rgba(0,0,0,.15);
+}
+.screen{display:none;flex-direction:column;height:100%;overflow:hidden}
+.screen.active{display:flex}
+
+/* ═══════════════════════════════════════════════
+   ТОПБАР
+═══════════════════════════════════════════════ */
+.tb{
+  background:var(--p);color:#fff;
+  display:flex;align-items:center;gap:6px;
+  padding:0 14px;
+  height:calc(var(--th) + env(safe-area-inset-top,0px));
+  padding-top:env(safe-area-inset-top,0px);
+  flex-shrink:0;
+}
+.tb-logo{font-size:15px;font-weight:800;letter-spacing:2px;flex:1}
+.tb-title{font-size:14px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-back{background:none;border:none;color:#fff;font-size:24px;padding:4px 8px 4px 0;cursor:pointer;display:flex;flex-shrink:0}
+.tb-lang{
+  font-size:11px;font-weight:700;color:rgba(255,255,255,.8);
+  background:rgba(255,255,255,.15);border:none;border-radius:6px;
+  padding:5px 9px;cursor:pointer;letter-spacing:.5px;
+}
+.tb-icon{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;padding:6px;cursor:pointer;display:flex}
+.tb-icon.hi{color:#ffd700}
+
+/* ═══════════════════════════════════════════════
+   СКРОЛЛ-ЗОНА
+═══════════════════════════════════════════════ */
+.sa{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* ═══════════════════════════════════════════════
+   НИЖНЯЯ НАВИГАЦИЯ
+═══════════════════════════════════════════════ */
+.bnav{
+  background:var(--card);border-top:.5px solid var(--border);
+  display:flex;flex-shrink:0;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  min-height:var(--bh);
+}
+.bn{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  padding:8px 0;
+}
+.bn i{font-size:22px}
+.bn em{font-size:10px;font-style:normal}
+.bn.on{color:var(--a)}
+
+/* ═══════════════════════════════════════════════
+   ЯЗЫК ОВЕРЛЕЙ
+═══════════════════════════════════════════════ */
+#lov{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.45);z-index:100;
+  align-items:flex-end;justify-content:center;
+}
+#lov.v{display:flex}
+.lsh{
+  background:var(--card);width:100%;max-width:560px;
+  border-radius:20px 20px 0 0;
+  padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));
+}
+.lsh h3{font-size:15px;font-weight:600;color:var(--p);text-align:center;margin-bottom:14px}
+.lopts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.lopt{
+  background:var(--bg);border:1.5px solid var(--border);
+  border-radius:var(--rs);padding:13px;text-align:center;
+  cursor:pointer;font-size:13px;font-weight:500;color:var(--p);
+}
+.lopt.on{border-color:var(--a);color:var(--a);background:#e6f4ff}
+.lcanc{width:100%;padding:12px;background:none;border:none;font-size:14px;color:var(--muted);cursor:pointer}
+
+/* ═══════════════════════════════════════════════
+   ПОИСК
+═══════════════════════════════════════════════ */
+.sw{padding:10px 14px 6px;flex-shrink:0}
+.sbox{
+  background:var(--card);border-radius:24px;border:.5px solid var(--border);
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+}
+.sbox i{font-size:17px;color:var(--a);flex-shrink:0}
+.sbox input{border:none;background:none;outline:none;font-size:14px;color:var(--text);width:100%}
+.sbox input::placeholder{color:var(--muted)}
+.sclr{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;display:none}
+.sclr.v{display:flex}
+
+/* ═══════════════════════════════════════════════
+   МЕТКИ
+═══════════════════════════════════════════════ */
+.slbl{
+  font-size:10px;font-weight:700;letter-spacing:.9px;
+  text-transform:uppercase;color:var(--p);opacity:.6;
+  padding:14px 14px 5px;
+}
+
+/* ═══════════════════════════════════════════════
+   ═══  ЭКРАН 1: ГЛАВНАЯ  ═══
+═══════════════════════════════════════════════ */
+
+/* Hero */
+.hero{
+  background:linear-gradient(145deg,#0b3a6f 0%,#0d4fa0 100%);
+  padding:28px 20px 24px;
+  display:flex;flex-direction:column;gap:6px;
+  flex-shrink:0;
+}
+.hero-logo{font-size:20px;font-weight:800;color:#fff;letter-spacing:2px}
+.hero-tag {font-size:13px;color:rgba(255,255,255,.65);line-height:1.5;margin-top:2px}
+.hero-stats{
+  display:flex;gap:10px;margin-top:16px;
+}
+.hstat{
+  background:rgba(255,255,255,.12);border-radius:10px;
+  padding:10px 14px;flex:1;text-align:center;
+}
+.hstat .hv{font-size:18px;font-weight:700;color:#fff}
+.hstat .hl{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;line-height:1.3}
+
+/* Главные тайлы навигации */
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 14px 8px}
+.home-tile{
+  background:var(--card);border:.5px solid var(--border);
+  border-radius:var(--r);padding:18px 14px 14px;
+  cursor:pointer;display:flex;flex-direction:column;gap:6px;
+  transition:background .1s;position:relative;overflow:hidden;
+}
+.home-tile:active{background:#e8f3ff}
+.home-tile.accent{background:var(--a);border-color:transparent}
+.home-tile.accent .ht-ico{color:#fff}
+.home-tile.accent .ht-name{color:#fff}
+.home-tile.accent .ht-sub{color:rgba(255,255,255,.7)}
+.ht-ico{font-size:30px;color:var(--a)}
+.ht-name{font-size:14px;font-weight:600;color:var(--p);line-height:1.3}
+.ht-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.ht-badge{
+  position:absolute;top:10px;right:10px;
+  background:var(--a);color:#fff;
+  font-size:10px;font-weight:700;
+  padding:3px 7px;border-radius:20px;
+}
+.home-tile.accent .ht-badge{background:rgba(255,255,255,.25)}
+
+/* Баннер установки */
+#ibar{
+  display:none;background:var(--p);
+  padding:10px 14px;align-items:center;gap:10px;flex-shrink:0;
+}
+#ibar p{font-size:12px;color:#fff;flex:1;line-height:1.4}
+.ib-y{background:#fff;color:var(--p);border:none;border-radius:var(--rs);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ib-n{background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer}
+
+/* ═══════════════════════════════════════════════
+   ═══  ЭКРАН 2: ТЕХ.КАРТЫ  ═══
+═══════════════════════════════════════════════ */
+.recent-row{
+  display:flex;gap:7px;padding:0 14px 8px;
+  overflow-x:auto;scrollbar-width:none;
+}
+.recent-row::-webkit-scrollbar{display:none}
+.rchip{
+  background:var(--card);border:.5px solid var(--border);
+  border-radius:20px;padding:6px 13px;white-space:nowrap;
+  font-size:12px;color:var(--p);cursor:pointer;flex-shrink:0;
+}
+.rchip:active{background:#e0eeff}
+
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 20px}
+.ctile{
+  background:var(--card);border:.5px solid var(--border);
+  border-radius:var(--r);padding:14px 12px 12px;
+  cursor:pointer;display:flex;flex-direction:column;gap:5px;
+  transition:background .1s;
+}
+.ctile:active{background:#e8f3ff}
+.ctile.empty{opacity:.38}
+.ctile i{font-size:26px;color:var(--a)}
+.ct-n{font-size:12px;font-weight:500;color:var(--p);line-height:1.35}
+.ct-c{font-size:10px;color:var(--muted)}
+
+/* ═══════════════════════════════════════════════
+   ═══  ЭКРАН 3: СПИСОК КАРТ КАТЕГОРИИ  ═══
+═══════════════════════════════════════════════ */
+.clist{display:flex;flex-direction:column;gap:7px;padding:8px 14px 20px}
+.ci{
+  background:var(--card);border:.5px solid var(--border);
+  border-radius:var(--rs);padding:12px 14px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;transition:background .1s;
+}
+.ci:active{background:#e8f3ff}
+.ci-ic{font-size:22px;color:var(--a);flex-shrink:0}
+.ci-inf{flex:1;min-width:0}
+.ci-n{font-size:13px;font-weight:500;color:var(--p);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-s{font-size:11px;color:var(--muted);margin-top:2px}
+.ci-arr{font-size:16px;color:#ccc;flex-shrink:0}
+
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty i{font-size:46px;display:block;margin-bottom:10px;opacity:.4}
+.empty p{font-size:13px;line-height:1.5}
+
+/* ═══════════════════════════════════════════════
+   ═══  ЭКРАН 4: ЧИТАЛКА КАРТЫ  ═══
+═══════════════════════════════════════════════ */
+.chard{background:var(--a);padding:12px 14px 18px;flex-shrink:0}
+.ch-cat{font-size:10px;color:rgba(255,255,255,.7);letter-spacing:.5px;text-transform:uppercase}
+.ch-t{font-size:16px;font-weight:700;color:#fff;line-height:1.45;margin-top:4px}
+.pbar{height:4px;background:rgba(255,255,255,.25);border-radius:2px;margin-top:12px;overflow:hidden}
+.pfill{height:100%;background:#fff;border-radius:2px;transition:width .3s;width:0%}
+
+/* Блоки контента */
+.cbody{padding:14px 14px 6px}
+.bh2{font-size:14px;font-weight:700;color:var(--p);margin:18px 0 8px;line-height:1.4}
+.bh2:first-child{margin-top:0}
+.bp{font-size:13px;line-height:1.65;color:var(--text);margin-bottom:8px}
+.bul{list-style:none;margin-bottom:10px}
+.bul li{font-size:13px;line-height:1.6;color:var(--text);padding:3px 0 3px 18px;position:relative}
+.bul li::before{content:'•';position:absolute;left:4px;color:var(--a);font-weight:700}
+
+.balert{
+  background:var(--warn-bg);border-left:3px solid var(--warn-b);
+  border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;
+}
+.balert .bh2{color:var(--warn-t);margin:0 0 6px;font-size:12px}
+.balert .bul li{color:var(--warn-t)}
+.balert .bul li::before{color:var(--warn-b)}
+.balert .bp{color:var(--warn-t)}
+
+/* Чек-лист */
+.bcl{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.chk{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:9px 10px;border-radius:var(--rs);
+  cursor:pointer;-webkit-user-select:none;user-select:none;
+  transition:background .1s;
+}
+.chk:active{background:#f0f8ff}
+.cbox{
+  width:22px;height:22px;border-radius:6px;
+  border:2px solid var(--a);background:#fff;
+  flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;
+}
+.chk.done .cbox{background:var(--a);border-color:var(--a)}
+.chk.done .cbox::after{content:'✓';font-size:13px;color:#fff;font-weight:700}
+.chk.done .clbl{text-decoration:line-through;color:var(--muted)}
+.clbl{font-size:13px;line-height:1.55;color:var(--text);flex:1}
+
+/* Навигационные блоки */
+.bnav2{margin:14px 0 10px;border-top:.5px solid var(--border);padding-top:12px}
+.bnav2 .bl{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;letter-spacing:.4px}
+.nlink{
+  display:flex;align-items:center;gap:8px;
+  padding:11px 13px;background:var(--card);
+  border:.5px solid var(--border);border-radius:var(--rs);
+  margin-bottom:6px;cursor:pointer;transition:background .1s;
+}
+.nlink:active{background:#e8f3ff}
+.nlink i{font-size:18px;color:var(--a)}
+.nlink span{font-size:13px;color:var(--p);font-weight:500;flex:1}
+.nlink .na{font-size:15px;color:#ccc}
+
+/* Вложенные разделы */
+.nsec{margin:10px 0}
+.ntog{
+  background:var(--card);border:.5px solid var(--border);
+  border-radius:var(--rs);padding:12px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;width:100%;text-align:left;
+  -webkit-user-select:none;user-select:none;
+}
+.ntog .nt{font-size:13px;font-weight:500;color:var(--p)}
+.ntog i{font-size:17px;color:var(--muted);transition:transform .2s}
+.ntog.o i{transform:rotate(180deg)}
+.nbody{display:none;padding:4px 4px 0}
+.nbody.o{display:block}
+
+.cfoot{
+  padding:8px 14px 10px;
+  border-top:.5px solid var(--border);background:var(--bg);flex-shrink:0;
+}
+.breset{
+  display:none;padding:10px 16px;
+  border:.5px solid var(--border);border-radius:var(--rs);
+  background:var(--card);font-size:12px;color:var(--muted);cursor:pointer;
+}
+.breset.v{display:block}
+
+/* ═══════════════════════════════════════════════
+   ═══  ЭКРАН 5: ОБЪЕКТЫ  ═══
+═══════════════════════════════════════════════ */
+.plist{display:flex;flex-direction:column;gap:10px;padding:12px 14px 20px}
+.ptile{
+  background:var(--card);border:.5px solid var(--border);
+  border-radius:var(--r);overflow:hidden;cursor:pointer;
+}
+.pimg{
+  width:100%;height:160px;background:linear-gradient(135deg,#0b3a6f,#1b98fb);
+  display:flex;align-items:center;justify-content:center;
+  font-size:40px;color:rgba(255,255,255,.25);
+  position:relative;overflow:hidden;flex-shrink:0;
+}
+.pimg img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.pinfo{padding:12px 14px 14px}
+.p-title{font-size:14px;font-weight:600;color:var(--p)}
+.p-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.ptag{
+  background:var(--bg);border:.5px solid var(--border);
+  border-radius:20px;padding:3px 10px;
+  font-size:11px;color:var(--p);
+}
+.p-desc{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+.p-stats{
+  display:flex;gap:12px;margin-top:10px;
+  border-top:.5px solid var(--border);padding-top:10px;
+}
+.pst{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.pst i{font-size:15px;color:var(--a)}
+
+/* Фото-галерея проекта */
+#proj-gallery{display:none;flex-direction:column;height:100%;overflow:hidden}
+.gallery-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px}
+.gimg{
+  aspect-ratio:1;background:linear-gradient(135deg,#0b3a6f,#1b98fb);
+  border-radius:6px;overflow:hidden;position:relative;cursor:pointer;
+}
+.gimg img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.gimg .gi-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:rgba(255,255,255,.2)}
+
+/* ═══════════════════════════════════════════════
+   ═══  ЭКРАН 6: КОНТАКТЫ  ═══
+═══════════════════════════════════════════════ */
+.contact-hero{
+  background:linear-gradient(145deg,#0b3a6f,#0d4fa0);
+  padding:28px 20px 24px;flex-shrink:0;
+}
+.ch-logo{font-size:22px;font-weight:800;color:#fff;letter-spacing:2px}
+.ch-tag{font-size:13px;color:rgba(255,255,255,.6);margin-top:4px;line-height:1.5}
+.ch-about{font-size:13px;color:rgba(255,255,255,.8);margin-top:12px;line-height:1.6}
+
+.stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:6px;padding:14px 14px 4px;
+}
+.stat{
+  background:var(--card);border:.5px solid var(--border);
+  border-radius:var(--rs);padding:10px 8px;text-align:center;
+}
+.stat .sv{font-size:16px;font-weight:700;color:var(--p)}
+.stat .sl{font-size:9px;color:var(--muted);line-height:1.3;margin-top:2px}
+
+.clinks{display:flex;flex-direction:column;gap:6px;padding:14px 14px 20px}
+.clink{
+  background:var(--card);border:.5px solid var(--border);
+  border-radius:var(--rs);padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;text-decoration:none;transition:background .1s;
+}
+.clink:active{background:#e8f3ff}
+.cl-ico{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,var(--p),var(--a));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;flex-shrink:0;
+}
+.cl-ico.wh{background:linear-gradient(135deg,#128c7e,#25d366)}
+.cl-ico.tg{background:linear-gradient(135deg,#0088cc,#00aaff)}
+.cl-ico.ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}
+.cl-ico.yt{background:linear-gradient(135deg,#c00,#ff0000)}
+.cl-inf{flex:1}
+.cl-lbl{font-size:13px;font-weight:500;color:var(--p)}
+.cl-val{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ═══════════════════════════════════════════════
+   ═══  ПОИСК (ЭКРАН)  ═══
+═══════════════════════════════════════════════ */
+#hint{text-align:center;padding:40px 20px}
+#hint i{font-size:42px;display:block;margin-bottom:10px;color:#ccc}
+#hint p{font-size:13px;color:var(--muted)}
+
+/* ═══════════════════════════════════════════════
+   ПЛАНШЕТ
+═══════════════════════════════════════════════ */
+@media(min-width:561px){
+  body{background:#c5c8d0;display:flex;align-items:center;justify-content:center}
+  #app{height:min(820px,95vh);border-radius:28px;overflow:hidden}
+}
+</style>
+</head>
+<body>
+
+<!-- ЗАГРУЗКА -->
+<div id="loading">
+  <div class="ll">KAZARBUILD</div>
+  <div class="spin"></div>
+  <div class="ls">Загрузка...</div>
+</div>
+
+<!-- ПРИЛОЖЕНИЕ -->
+<div id="app" style="display:none">
+
+  <!-- ОВЕРЛЕЙ ЯЗЫКОВ -->
+  <div id="lov" onclick="if(event.target===this)hideLang()">
+    <div class="lsh">
+      <h3>Выберите язык</h3>
+      <div class="lopts" id="lopts"></div>
+      <button class="lcanc" onclick="hideLang()">Отмена</button>
+    </div>
+  </div>
+
+  <!-- ════════ ЭКРАН: ГЛАВНАЯ ════════ -->
+  <div id="s0" class="screen active">
+    <div class="tb">
+      <span class="tb-logo">KAZARBUILD</span>
+      <button class="tb-lang" onclick="showLang()">RU</button>
+    </div>
+    <div id="ibar">
+      <p>Установить приложение для работы офлайн?</p>
+      <button class="ib-y" id="iby">Установить</button>
+      <button class="ib-n" onclick="document.getElementById('ibar').style.display='none'">✕</button>
+    </div>
+    <div class="sa">
+      <div class="hero" id="hero">
+        <div class="hero-logo">KAZARBUILD</div>
+        <div class="hero-tag" id="hero-tag">Строим с душой, работаем по технологии</div>
+        <div class="hero-stats" id="hero-stats"></div>
+      </div>
+      <div class="home-grid">
+        <div class="home-tile accent" onclick="goto('s1')" style="grid-column:1/-1">
+          <i class="ti ti-clipboard-list ht-ico"></i>
+          <div class="ht-name">Тех.карты</div>
+          <div class="ht-sub">32 раздела — пошаговые инструкции</div>
+          <div class="ht-badge" id="cards-badge">0 карт</div>
+        </div>
+        <div class="home-tile" onclick="goto('s4')">
+          <i class="ti ti-building-skyscraper ht-ico"></i>
+          <div class="ht-name">Наши объекты</div>
+          <div class="ht-sub">Фото выполненных работ</div>
+        </div>
+        <div class="home-tile" onclick="goto('s5')">
+          <i class="ti ti-phone ht-ico"></i>
+          <div class="ht-name">Контакты</div>
+          <div class="ht-sub">Телефон, WhatsApp, Telegram</div>
+        </div>
+      </div>
+    </div>
+    <nav class="bnav">
+      <button class="bn on" onclick="goto('s0')"><i class="ti ti-home"></i><em>Главная</em></button>
+      <button class="bn" onclick="goto('s1')"><i class="ti ti-clipboard-list"></i><em>Карты</em></button>
+      <button class="bn" onclick="toSearch()"><i class="ti ti-search"></i><em>Поиск</em></button>
+      <button class="bn" onclick="goto('s4')"><i class="ti ti-building"></i><em>Объекты</em></button>
+      <button class="bn" onclick="goto('s5')"><i class="ti ti-phone"></i><em>Контакты</em></button>
+    </nav>
+  </div>
+
+  <!-- ════════ ЭКРАН: ТЕХ.КАРТЫ (категории) ════════ -->
+  <div id="s1" class="screen">
+    <div class="tb">
+      <button class="tb-back" onclick="goto('s0')"><i class="ti ti-arrow-left"></i></button>
+      <span class="tb-title">Тех.карты</span>
+      <button class="tb-lang" onclick="showLang()">RU</button>
+    </div>
+    <div class="sw" style="cursor:pointer" onclick="toSearch()">
+      <div class="sbox">
+        <i class="ti ti-search"></i>
+        <input placeholder="Поиск по картам..." readonly style="cursor:pointer">
+      </div>
+    </div>
+    <div class="sa">
+      <div id="rsec" style="display:none">
+        <div class="slbl">Недавнее</div>
+        <div class="recent-row" id="rrow"></div>
+      </div>
+      <div class="slbl">Все разделы</div>
+      <div class="cgrid" id="cgrid"></div>
+    </div>
+    <nav class="bnav">
+      <button class="bn" onclick="goto('s0')"><i class="ti ti-home"></i><em>Главная</em></button>
+      <button class="bn on" onclick="goto('s1')"><i class="ti ti-clipboard-list"></i><em>Карты</em></button>
+      <button class="bn" onclick="toSearch()"><i class="ti ti-search"></i><em>Поиск</em></button>
+      <button class="bn" onclick="goto('s4')"><i class="ti ti-building"></i><em>Объекты</em></button>
+      <button class="bn" onclick="goto('s5')"><i class="ti ti-phone"></i><em>Контакты</em></button>
+    </nav>
+  </div>
+
+  <!-- ════════ ЭКРАН: СПИСОК КАРТ КАТЕГОРИИ ════════ -->
+  <div id="s2" class="screen">
+    <div class="tb">
+      <button class="tb-back" onclick="goto('s1')"><i class="ti ti-arrow-left"></i></button>
+      <span class="tb-title" id="s2-title">Раздел</span>
+    </div>
+    <div class="sa">
+      <div class="clist" id="s2-list"></div>
+    </div>
+    <nav class="bnav">
+      <button class="bn" onclick="goto('s0')"><i class="ti ti-home"></i><em>Главная</em></button>
+      <button class="bn on" onclick="goto('s1')"><i class="ti ti-clipboard-list"></i><em>Карты</em></button>
+      <button class="bn" onclick="toSearch()"><i class="ti ti-search"></i><em>Поиск</em></button>
+      <button class="bn" onclick="goto('s4')"><i class="ti ti-building"></i><em>Объекты</em></button>
+      <button class="bn" onclick="goto('s5')"><i class="ti ti-phone"></i><em>Контакты</em></button>
+    </nav>
+  </div>
+
+  <!-- ════════ ЭКРАН: ЧИТАЛКА КАРТЫ ════════ -->
+  <div id="s3" class="screen">
+    <div class="tb">
+      <button class="tb-back" id="s3-back"><i class="ti ti-arrow-left"></i></button>
+      <span class="tb-title" id="s3-top-cat" style="font-size:11px;opacity:.8"></span>
+      <button class="tb-icon" id="s3-fav" onclick="toggleFav()"><i class="ti ti-bookmark"></i></button>
+    </div>
+    <div class="sa" id="s3-scroll">
+      <div class="chard">
+        <div class="ch-cat" id="s3-cat"></div>
+        <div class="ch-t"   id="s3-title"></div>
+        <div class="pbar"   id="s3-pbar" style="display:none">
+          <div class="pfill" id="s3-pfill"></div>
+        </div>
+      </div>
+      <div class="cbody" id="s3-body"></div>
+    </div>
+    <div class="cfoot">
+      <button class="breset" id="s3-reset" onclick="resetCL()">↺ Сбросить чек-лист</button>
+    </div>
+    <nav class="bnav">
+      <button class="bn" onclick="goto('s0')"><i class="ti ti-home"></i><em>Главная</em></button>
+      <button class="bn" onclick="goto('s1')"><i class="ti ti-clipboard-list"></i><em>Карты</em></button>
+      <button class="bn" onclick="toSearch()"><i class="ti ti-search"></i><em>Поиск</em></button>
+      <button class="bn" onclick="goto('s4')"><i class="ti ti-building"></i><em>Объекты</em></button>
+      <button class="bn" onclick="goto('s5')"><i class="ti ti-phone"></i><em>Контакты</em></button>
+    </nav>
+  </div>
+
+  <!-- ════════ ЭКРАН: ОБЪЕКТЫ ════════ -->
+  <div id="s4" class="screen">
+    <div class="tb">
+      <button class="tb-back" onclick="goto('s0')"><i class="ti ti-arrow-left"></i></button>
+      <span class="tb-title">Наши объекты</span>
+    </div>
+    <div class="sa">
+      <div class="plist" id="plist"></div>
+    </div>
+    <nav class="bnav">
+      <button class="bn" onclick="goto('s0')"><i class="ti ti-home"></i><em>Главная</em></button>
+      <button class="bn" onclick="goto('s1')"><i class="ti ti-clipboard-list"></i><em>Карты</em></button>
+      <button class="bn" onclick="toSearch()"><i class="ti ti-search"></i><em>Поиск</em></button>
+      <button class="bn on" onclick="goto('s4')"><i class="ti ti-building"></i><em>Объекты</em></button>
+      <button class="bn" onclick="goto('s5')"><i class="ti ti-phone"></i><em>Контакты</em></button>
+    </nav>
+  </div>
+
+  <!-- ════════ ЭКРАН: КОНТАКТЫ ════════ -->
+  <div id="s5" class="screen">
+    <div class="tb">
+      <button class="tb-back" onclick="goto('s0')"><i class="ti ti-arrow-left"></i></button>
+      <span class="tb-title">Контакты</span>
+    </div>
+    <div class="sa">
+      <div class="contact-hero" id="chero"></div>
+      <div class="stats-row" id="cstats"></div>
+      <div class="clinks" id="clinks"></div>
+    </div>
+    <nav class="bnav">
+      <button class="bn" onclick="goto('s0')"><i class="ti ti-home"></i><em>Главная</em></button>
+      <button class="bn" onclick="goto('s1')"><i class="ti ti-clipboard-list"></i><em>Карты</em></button>
+      <button class="bn" onclick="toSearch()"><i class="ti ti-search"></i><em>Поиск</em></button>
+      <button class="bn" onclick="goto('s4')"><i class="ti ti-building"></i><em>Объекты</em></button>
+      <button class="bn on" onclick="goto('s5')"><i class="ti ti-phone"></i><em>Контакты</em></button>
+    </nav>
+  </div>
+
+  <!-- ════════ ЭКРАН: ПОИСК ════════ -->
+  <div id="s6" class="screen">
+    <div class="tb">
+      <button class="tb-back" id="s6-back" onclick="goto('s1')"><i class="ti ti-arrow-left"></i></button>
+      <span class="tb-title">Поиск</span>
+      <button class="tb-lang" onclick="showLang()">RU</button>
+    </div>
+    <div class="sw">
+      <div class="sbox">
+        <i class="ti ti-search"></i>
+        <input id="sinp" placeholder="Введите слово...">
+        <button class="sclr" id="sclr" onclick="clearS()"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div class="sa">
+      <div class="clist" id="sres">
+        <div id="hint"><i class="ti ti-search"></i><p>Начните вводить название</p></div>
+      </div>
+    </div>
+    <nav class="bnav">
+      <button class="bn" onclick="goto('s0')"><i class="ti ti-home"></i><em>Главная</em></button>
+      <button class="bn" onclick="goto('s1')"><i class="ti ti-clipboard-list"></i><em>Карты</em></button>
+      <button class="bn on" onclick="toSearch()"><i class="ti ti-search"></i><em>Поиск</em></button>
+      <button class="bn" onclick="goto('s4')"><i class="ti ti-building"></i><em>Объекты</em></button>
+      <button class="bn" onclick="goto('s5')"><i class="ti ti-phone"></i><em>Контакты</em></button>
+    </nav>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════════
+   СОСТОЯНИЕ
+════════════════════════════════════════════ */
+let CATS     = [];
+let CARDS    = [];
+let PROJECTS = [];
+let CONTACTS = {};
+let LANG     = localStorage.getItem('kb_l') || 'ru';
+let RECENT   = JSON.parse(localStorage.getItem('kb_r') || '[]');
+let FAVS     = JSON.parse(localStorage.getItem('kb_f') || '[]');
+let curCard  = null;
+let s3From   = 's1';
+let prevSearch = '';
+let pwa      = null;
+
+const LBTN  = {ru:'RU',kz:'KZ',uz:'UZ',en:'EN',tk:'TK'};
+const LNAME = {ru:'Русский',kz:'Қазақша',uz:"O'zbekcha",en:'English',tk:'Türkmençe'};
+
+const CICO = {
+  'nachalo-i-zapusk-obekta':          'ti-building-warehouse',
+  'demontazhnye-raboty':              'ti-hammer',
+  'pereustroystvo-i-pereplanirovka':  'ti-vector-triangle',
+  'kladka-sten':                      'ti-layout-grid',
+  'shtukaturka':                      'ti-brush',
+  'okna':                             'ti-window',
+  'teploizolyatsiya':                 'ti-flame',
+  'otkosy':                           'ti-triangle',
+  'santekhnika':                      'ti-droplet',
+  'zvukoizolyatsiya':                 'ti-volume-2',
+  'elektromontazhnye-raboty':         'ti-bolt',
+  'slabotochka':                      'ti-wifi',
+  'podrozetniki-i-prokhodki':         'ti-plug',
+  'ventilyatsiya-i-konditsionirovanie':'ti-wind',
+  'styazhka':                         'ti-layers-difference',
+  'plintus-skrytogo-montazha':        'ti-border-bottom',
+  'dveri':                            'ti-door',
+  'elektricheskie-teplye-poly':       'ti-temperature',
+  'gidroizolyatsiya':                 'ti-droplet-half',
+  'plitka':                           'ti-grid-dots',
+  'zatirka-shvov':                    'ti-border-all',
+  'gipsokartonnye-raboty':            'ti-layout-sidebar',
+  'shpaklyovka':                      'ti-paint',
+  'nalivnoy-pol':                     'ti-align-box-bottom-center',
+  'gipsovaya-lepnina-paneli-i-moldingi':'ti-crown',
+  'napolnye-pokrytiya':               'ti-layout-bottombar',
+  'natyazhnye-potolki':               'ti-rectangle',
+  'podokonniki':                      'ti-window-maximize',
+  'uborka':                           'ti-sparkles',
+  'plintus':                          'ti-minus',
+  'mebel':                            'ti-sofa',
+  'pokraska':                         'ti-palette',
+};
+
+/* ════════════════════════════════════════════
+   ЗАГРУЗКА ДАННЫХ
+════════════════════════════════════════════ */
+async function loadAll() {
+  try {
+    const [r1,r2,r3,r4] = await Promise.all([
+      fetch('./data/categories.json'),
+      fetch('./data/cards.json'),
+      fetch('./data/projects.json'),
+      fetch('./data/contacts.json'),
+    ]);
+    CATS     = await r1.json();
+    CARDS    = await r2.json();
+    PROJECTS = await r3.json();
+    CONTACTS = await r4.json();
+    return true;
+  } catch(e) {
+    console.error(e);
+    document.querySelector('#loading .ls').textContent = 'Ошибка загрузки. Проверьте подключение.';
+    return false;
+  }
+}
+
+/* ════════════════════════════════════════════
+   УТИЛИТЫ
+════════════════════════════════════════════ */
+function norm(s){ return (s||'').toLowerCase().replace(/\s+/g,' ').trim() }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function plural(n,a,b,c){
+  const m=n%10,M=n%100;
+  return m===1&&M!==11?a:m>=2&&m<=4&&(M<10||M>=20)?b:c;
+}
+function ttl(card){ return card.title?.[LANG]||card.title?.ru||card.slug||'—' }
+function catOf(card){ return CATS.find(c=>c.id===card.category_id)||null }
+function cardsOfCat(catId){ return CARDS.filter(c=>c.category_id===catId) }
+
+/* ════════════════════════════════════════════
+   НАВИГАЦИЯ
+════════════════════════════════════════════ */
+function goto(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='s1') renderCards();
+  if(id==='s4') renderProjects();
+  if(id==='s5') renderContacts();
+}
+
+function toSearch(from){
+  prevSearch = from||'s1';
+  document.getElementById('s6-back').onclick = ()=>goto(prevSearch);
+  goto('s6');
+  setTimeout(()=>document.getElementById('sinp').focus(), 80);
+}
+
+/* ════════════════════════════════════════════
+   ГЛАВНАЯ
+════════════════════════════════════════════ */
+function renderHome(){
+  // hero stats
+  if(CONTACTS.stats){
+    const sr = document.getElementById('hero-stats');
+    sr.innerHTML = CONTACTS.stats.map(s=>
+      `<div class="hstat"><div class="hv">${s.value}</div><div class="hl">${s.label}</div></div>`
+    ).join('');
+  }
+  if(CONTACTS.tagline) document.getElementById('hero-tag').textContent = CONTACTS.tagline;
+  // cards badge
+  document.getElementById('cards-badge').textContent = CARDS.length+' '+(CARDS.length===1?'карта':CARDS.length<5?'карты':'карт');
+  updateLangBtns();
+}
+
+/* ════════════════════════════════════════════
+   ТЕХ.КАРТЫ — КАТЕГОРИИ
+════════════════════════════════════════════ */
+function renderCards(){
+  // Недавнее
+  const rsec = document.getElementById('rsec');
+  const rrow = document.getElementById('rrow');
+  const vr = RECENT.filter(id=>CARDS.find(c=>c.id===id));
+  rsec.style.display = vr.length?'block':'none';
+  rrow.innerHTML = '';
+  vr.slice(0,7).forEach(id=>{
+    const card = CARDS.find(c=>c.id===id);
+    if(!card) return;
+    const ch = document.createElement('div');
+    ch.className='rchip';
+    ch.textContent = ttl(card);
+    ch.onclick = ()=>openCard(card.id,'s1');
+    rrow.appendChild(ch);
+  });
+  // Категории
+  const grid = document.getElementById('cgrid');
+  grid.innerHTML = '';
+  CATS.forEach(cat=>{
+    const cnt = cardsOfCat(cat.id).length;
+    const ico = CICO[cat.slug]||'ti-file-text';
+    const el  = document.createElement('div');
+    el.className = 'ctile'+(cnt===0?' empty':'');
+    el.innerHTML = `<i class="ti ${ico}"></i><div class="ct-n">${cat.name}</div><div class="ct-c">${cnt?cnt+' '+plural(cnt,'карта','карты','карт'):'В разработке'}</div>`;
+    el.onclick = ()=>openCat(cat.id);
+    grid.appendChild(el);
+  });
+}
+
+function openCat(catId){
+  const cat = CATS.find(c=>c.id===catId);
+  if(!cat) return;
+  document.getElementById('s2-title').textContent = cat.name;
+  const list = document.getElementById('s2-list');
+  list.innerHTML = '';
+  const cards = cardsOfCat(catId);
+  if(!cards.length){
+    list.innerHTML='<div class="empty"><i class="ti ti-file-off"></i><p>Карты для этого раздела ещё в разработке</p></div>';
+  } else {
+    cards.forEach(c=>list.appendChild(mkCI(c,'s2')));
+  }
+  goto('s2');
+}
+
+/* ════════════════════════════════════════════
+   ЭЛЕМЕНТ КАРТЫ (переиспользуется)
+════════════════════════════════════════════ */
+function mkCI(card, from){
+  const content = card.content?.[LANG]||card.content?.ru;
+  const hasCL   = (content?.blocks||[]).some(b=>b.type==='checklist');
+  const cat     = catOf(card);
+  const el = document.createElement('div');
+  el.className = 'ci';
+  const ico = hasCL?'ti-clipboard-check':'ti-file-text';
+  const sub = hasCL?'Чек-лист':'Инструкция';
+  el.innerHTML=`
+    <i class="ti ${ico} ci-ic"></i>
+    <div class="ci-inf">
+      <div class="ci-n">${ttl(card)}</div>
+      <div class="ci-s">${sub}${cat&&from!=='s2'?' · '+cat.name:''}</div>
+    </div>
+    <i class="ti ti-chevron-right ci-arr"></i>`;
+  el.onclick=()=>openCard(card.id,from);
+  return el;
+}
+
+/* ════════════════════════════════════════════
+   ЧИТАЛКА КАРТЫ
+════════════════════════════════════════════ */
+function openCard(cardId, from){
+  const card = CARDS.find(c=>c.id===cardId);
+  if(!card) return;
+  s3From = from||'s1';
+  curCard = card;
+  addRecent(card.id);
+  renderCard(card);
+  goto('s3');
+  document.getElementById('s3-back').onclick=()=>goto(s3From);
+  document.getElementById('s3-scroll').scrollTop=0;
+}
+
+function renderCard(card){
+  const content = card.content?.[LANG]||card.content?.ru;
+  const cat     = catOf(card);
+  const t       = ttl(card);
+
+  document.getElementById('s3-cat').textContent   = cat?cat.name:'';
+  document.getElementById('s3-title').textContent = t;
+  document.getElementById('s3-top-cat').textContent = cat?cat.name:'';
+
+  const fb = document.getElementById('s3-fav');
+  const isFav = FAVS.includes(card.id);
+  fb.className='tb-icon'+(isFav?' hi':'');
+  fb.querySelector('i').className = isFav?'ti ti-bookmark-filled':'ti ti-bookmark';
+
+  const body = document.getElementById('s3-body');
+  body.innerHTML='';
+
+  if(!content){
+    body.innerHTML='<p class="bp">Контент недоступен на выбранном языке.</p>';
+    return;
+  }
+
+  const clKey = 'kb_cl_'+card.id;
+  const clSaved = JSON.parse(localStorage.getItem(clKey)||'[]');
+  let hasCL = false;
+  let alertEl = null;
+
+  function flushAlert(){
+    if(alertEl){ body.appendChild(alertEl); alertEl=null; }
+  }
+
+  (content.blocks||[]).forEach(b=>{
+    if(b.type==='h2'&&(b.text||'').includes('ВАЖНО')){
+      flushAlert();
+      alertEl = document.createElement('div');
+      alertEl.className='balert';
+      const h=document.createElement('div');h.className='bh2';h.textContent=b.text;
+      alertEl.appendChild(h);
+      return;
+    }
+    if(b.type==='h2') flushAlert();
+    const parent = alertEl||body;
+    const el = mkBlock(b,clKey,()=>updProg(clKey));
+    if(el){ parent.appendChild(el); if(b.type==='checklist') hasCL=true; }
+  });
+  flushAlert();
+
+  // Вложенные разделы
+  (content.nestedSections||[]).forEach(sec=>{
+    if(!sec) return;
+    const w=document.createElement('div'); w.className='nsec';
+    const tog=document.createElement('button'); tog.className='ntog';
+    tog.innerHTML=`<span class="nt">${sec.title||'Раздел'}</span><i class="ti ti-chevron-down"></i>`;
+    const ib=document.createElement('div'); ib.className='nbody';
+    (sec.blocks||[]).forEach(b=>{
+      const el=mkBlock(b,clKey,()=>updProg(clKey));
+      if(el){ib.appendChild(el);if(b.type==='checklist') hasCL=true;}
+    });
+    tog.onclick=()=>{tog.classList.toggle('o');ib.classList.toggle('o')};
+    w.appendChild(tog); w.appendChild(ib); body.appendChild(w);
+  });
+
+  // Навигация снизу
+  const navItems = content.navigation||[];
+  if(navItems.length){
+    const nv=document.createElement('div'); nv.className='bnav2';
+    nv.innerHTML='<div class="bl">Связанные карты</div>';
+    navItems.forEach(item=>{
+      const l=document.createElement('div'); l.className='nlink';
+      l.innerHTML=`<i class="ti ti-file-text"></i><span>${item.text}</span><i class="ti ti-chevron-right na"></i>`;
+      l.onclick=()=>{
+        const t=CARDS.find(c=>c.id===item.card_id||c.slug===item.slug);
+        if(t) openCard(t.id,'s3');
+      };
+      nv.appendChild(l);
+    });
+    body.appendChild(nv);
+  }
+
+  // Прогресс
+  const pb=document.getElementById('s3-pbar');
+  const rb=document.getElementById('s3-reset');
+  if(hasCL){
+    pb.style.display='block'; rb.classList.add('v');
+    const all=body.querySelectorAll('.chk');
+    clSaved.forEach(i=>{if(all[i]) all[i].classList.add('done')});
+    updProg(clKey);
+  } else {
+    pb.style.display='none'; rb.classList.remove('v');
+  }
+}
+
+function mkBlock(b, clKey, onChange){
+  switch(b.type){
+    case 'h2':{
+      const e=document.createElement('div'); e.className='bh2'; e.textContent=b.text||''; return e;
+    }
+    case 'p':{
+      const e=document.createElement('div'); e.className='bp'; e.textContent=b.text||''; return e;
+    }
+    case 'ul':{
+      const ul=document.createElement('ul'); ul.className='bul';
+      (b.items||[]).forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li)});
+      return ul;
+    }
+    case 'checklist':{
+      const w=document.createElement('div'); w.className='bcl';
+      (b.items||[]).forEach((t,i)=>{
+        const row=document.createElement('div'); row.className='chk'; row.dataset.i=i;
+        row.innerHTML=`<div class="cbox"></div><span class="clbl">${t}</span>`;
+        row.onclick=function(){
+          this.classList.toggle('done');
+          const all=document.querySelectorAll('#s3-body .chk');
+          const idx=[];
+          all.forEach((c,j)=>{if(c.classList.contains('done')) idx.push(j)});
+          try{localStorage.setItem(clKey,JSON.stringify(idx))}catch(e){}
+          onChange();
+        };
+        w.appendChild(row);
+      });
+      return w;
+    }
+    case 'nav':{
+      if(!b.items?.length) return null;
+      const w=document.createElement('div'); w.className='bnav2';
+      w.innerHTML='<div class="bl">Подразделы</div>';
+      (b.items||[]).forEach(item=>{
+        const l=document.createElement('div'); l.className='nlink';
+        l.innerHTML=`<i class="ti ti-file-text"></i><span>${item.text}</span><i class="ti ti-chevron-right na"></i>`;
+        l.onclick=()=>{
+          const t=CARDS.find(c=>c.id===item.card_id||c.slug===item.slug);
+          if(t) openCard(t.id,'s3');
+        };
+        w.appendChild(l);
+      });
+      return w;
+    }
+    case 'image': case 'img':{
+      if(!b.src) return null;
+      const img=document.createElement('img');
+      img.src=b.src; img.alt=b.alt||''; img.loading='lazy';
+      img.style.cssText='width:100%;border-radius:8px;margin:8px 0';
+      return img;
+    }
+    default: return null;
+  }
+}
+
+function updProg(clKey){
+  const body=document.getElementById('s3-body');
+  const fill=document.getElementById('s3-pfill');
+  if(!body||!fill) return;
+  const all=body.querySelectorAll('.chk').length;
+  const done=body.querySelectorAll('.chk.done').length;
+  fill.style.width=all?Math.round(done/all*100)+'%':'0%';
+}
+
+function resetCL(){
+  if(!curCard) return;
+  try{localStorage.removeItem('kb_cl_'+curCard.id)}catch(e){}
+  document.querySelectorAll('#s3-body .chk').forEach(el=>el.classList.remove('done'));
+  document.getElementById('s3-pfill').style.width='0%';
+}
+
+/* ════════════════════════════════════════════
+   ОБЪЕКТЫ
+════════════════════════════════════════════ */
+function renderProjects(){
+  const list=document.getElementById('plist');
+  list.innerHTML='';
+  if(!PROJECTS.length){
+    list.innerHTML='<div class="empty"><i class="ti ti-building-off"></i><p>Объекты ещё не добавлены.<br>Добавьте их в data/projects.json</p></div>';
+    return;
+  }
+  PROJECTS.forEach(p=>{
+    const el=document.createElement('div'); el.className='ptile';
+    const tags=(p.tags||[]).map(t=>`<span class="ptag">${t}</span>`).join('');
+    el.innerHTML=`
+      <div class="pimg">
+        ${p.cover?`<img src="${p.cover}" alt="${p.title}" loading="lazy">`:'<i class="ti ti-building"></i>'}
+      </div>
+      <div class="pinfo">
+        <div class="p-title">${p.title}</div>
+        <div class="p-meta">${tags}</div>
+        ${p.description?`<div class="p-desc">${p.description}</div>`:''}
+        <div class="p-stats">
+          <div class="pst"><i class="ti ti-ruler"></i>${p.area} м²</div>
+          <div class="pst"><i class="ti ti-map-pin"></i>${p.location}</div>
+          <div class="pst"><i class="ti ti-clock"></i>${p.duration}</div>
+        </div>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+/* ════════════════════════════════════════════
+   КОНТАКТЫ
+════════════════════════════════════════════ */
+function renderContacts(){
+  const c=CONTACTS;
+  // hero
+  document.getElementById('chero').innerHTML=`
+    <div class="ch-logo">${c.company||'KAZARBUILD'}</div>
+    ${c.tagline?`<div class="ch-tag">${c.tagline}</div>`:''}
+    ${c.about?`<div class="ch-about">${c.about}</div>`:''}`;
+
+  // stats
+  const sr=document.getElementById('cstats');
+  sr.innerHTML=(c.stats||[]).map(s=>
+    `<div class="stat"><div class="sv">${s.value}</div><div class="sl">${s.label}</div></div>`
+  ).join('');
+
+  // ссылки
+  const cl=document.getElementById('clinks');
+  cl.innerHTML='';
+  const links=[
+    {label:'Телефон', val:c.phone,         href:'tel:'+c.phone,                   ico:'ti-phone',   cls:''},
+    {label:'WhatsApp',val:c.whatsapp,       href:'https://wa.me/'+c.whatsapp.replace(/\D/g,''), ico:'ti-brand-whatsapp', cls:'wh'},
+    {label:'Telegram', val:c.telegram,      href:'https://t.me/'+c.telegram.replace('@',''),    ico:'ti-brand-telegram', cls:'tg'},
+    {label:'Instagram',val:c.instagram,     href:'https://instagram.com/'+c.instagram.replace('@',''), ico:'ti-brand-instagram', cls:'ig'},
+    {label:'YouTube',  val:c.youtube,       href:c.youtube,                        ico:'ti-brand-youtube', cls:'yt'},
+    {label:'Email',    val:c.email,         href:'mailto:'+c.email,                ico:'ti-mail',    cls:''},
+    {label:'Адрес',    val:c.address,       href:null,                             ico:'ti-map-pin', cls:''},
+    {label:'Часы работы',val:c.work_hours,  href:null,                             ico:'ti-clock',   cls:''},
+  ];
+  links.filter(l=>l.val).forEach(l=>{
+    const el=document.createElement(l.href?'a':'div');
+    el.className='clink';
+    if(l.href){el.href=l.href;if(!l.href.startsWith('tel')&&!l.href.startsWith('mailto')) el.target='_blank';}
+    el.innerHTML=`
+      <div class="cl-ico ${l.cls}"><i class="ti ${l.ico}"></i></div>
+      <div class="cl-inf">
+        <div class="cl-lbl">${l.label}</div>
+        <div class="cl-val">${l.val}</div>
+      </div>`;
+    cl.appendChild(el);
+  });
+}
+
+/* ════════════════════════════════════════════
+   ПОИСК
+════════════════════════════════════════════ */
+const sinp=document.getElementById('sinp');
+const sclr=document.getElementById('sclr');
+
+sinp.addEventListener('input',()=>{
+  const q=sinp.value.trim();
+  sclr.className='sclr'+(q?' v':'');
+  doSearch(q);
+});
+
+function clearS(){
+  sinp.value='';sclr.className='sclr';
+  document.getElementById('sres').innerHTML='<div id="hint"><i class="ti ti-search"></i><p>Начните вводить название</p></div>';
+  sinp.focus();
+}
+
+function doSearch(q){
+  const res=document.getElementById('sres');
+  if(!q){res.innerHTML='<div id="hint"><i class="ti ti-search"></i><p>Начните вводить название</p></div>';return;}
+  const ql=q.toLowerCase();
+  const hits=CARDS.filter(card=>{
+    if(ttl(card).toLowerCase().includes(ql)) return true;
+    const ct=card.content?.[LANG]||card.content?.ru;
+    if(!ct) return false;
+    return (ct.blocks||[]).some(b=>
+      (b.text||'').toLowerCase().includes(ql)||
+      (b.items||[]).some(i=>(i||'').toLowerCase().includes(ql))
+    );
+  });
+  res.innerHTML='';
+  if(!hits.length){
+    res.innerHTML=`<div class="empty"><i class="ti ti-zoom-cancel"></i><p>Ничего не найдено по «${esc(q)}»</p></div>`;
+  } else {
+    hits.forEach(c=>res.appendChild(mkCI(c,'s6')));
+  }
+}
+
+/* ════════════════════════════════════════════
+   ИЗБРАННОЕ
+════════════════════════════════════════════ */
+function toggleFav(){
+  if(!curCard) return;
+  const id=curCard.id;
+  const i=FAVS.indexOf(id);
+  if(i>=0) FAVS.splice(i,1); else FAVS.unshift(id);
+  try{localStorage.setItem('kb_f',JSON.stringify(FAVS))}catch(e){}
+  const fb=document.getElementById('s3-fav');
+  const isFav=FAVS.includes(id);
+  fb.className='tb-icon'+(isFav?' hi':'');
+  fb.querySelector('i').className=isFav?'ti ti-bookmark-filled':'ti ti-bookmark';
+}
+
+/* ════════════════════════════════════════════
+   НЕДАВНЕЕ
+════════════════════════════════════════════ */
+function addRecent(id){
+  RECENT=[id,...RECENT.filter(r=>r!==id)].slice(0,8);
+  try{localStorage.setItem('kb_r',JSON.stringify(RECENT))}catch(e){}
+}
+
+/* ════════════════════════════════════════════
+   ЯЗЫК
+════════════════════════════════════════════ */
+function showLang(){
+  const opts=document.getElementById('lopts');
+  opts.innerHTML='';
+  Object.keys(LBTN).forEach(code=>{
+    const b=document.createElement('button');
+    b.className='lopt'+(LANG===code?' on':'');
+    b.textContent=LNAME[code];
+    b.onclick=()=>{setLang(code);hideLang()};
+    opts.appendChild(b);
+  });
+  document.getElementById('lov').classList.add('v');
+}
+function hideLang(){document.getElementById('lov').classList.remove('v')}
+function setLang(code){
+  LANG=code;
+  try{localStorage.setItem('kb_l',code)}catch(e){}
+  updateLangBtns();
+  renderHome();
+  renderCards();
+  if(curCard) renderCard(curCard);
+}
+function updateLangBtns(){
+  const l=LBTN[LANG]||'RU';
+  document.querySelectorAll('.tb-lang').forEach(b=>b.textContent=l);
+}
+
+/* ════════════════════════════════════════════
+   PWA
+════════════════════════════════════════════ */
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); pwa=e;
+  document.getElementById('ibar').style.display='flex';
+});
+document.getElementById('iby').onclick=async()=>{
+  if(!pwa) return;
+  pwa.prompt();
+  await pwa.userChoice;
+  pwa=null;
+  document.getElementById('ibar').style.display='none';
+};
+
+/* ════════════════════════════════════════════
+   СТАРТ
+════════════════════════════════════════════ */
+(async()=>{
+  const ok=await loadAll();
+  document.getElementById('loading').style.display='none';
+  if(!ok) return;
+  document.getElementById('app').style.display='flex';
+  renderHome();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
